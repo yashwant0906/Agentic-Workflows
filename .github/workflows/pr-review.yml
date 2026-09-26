@@ -1,0 +1,37 @@
+name: PR review agent
+
+# `pull_request` (not `pull_request_target`): PRs from forks get no secrets,
+# so untrusted fork code never runs with your API key. The script skips then.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python .github/scripts/agent_bot.py review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Set ONE of these as a repository secret (Settings -> Secrets -> Actions):
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}  # self-hosted OpenAI-compatible server
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          # Optional repository variables (Settings -> Variables -> Actions):
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}

@@ -1,0 +1,13 @@
+date,region,product,units,unit_price
+2026-01-05,North,Widget,120,9.50
+2026-01-06,South,Widget,95,9.50
+2026-01-09,East,Gadget,40,24.00
+2026-01-12,West,Widget,150,9.50
+2026-01-15,North,Gadget,35,24.00
+2026-01-18,South,Gizmo,60,15.75
+2026-01-21,East,Widget,110,9.50
+2026-01-24,West,Gizmo,45,15.75
+2026-01-27,North,Gizmo,80,15.75
+2026-01-30,South,Gadget,55,24.00
+2026-02-02,East,Gizmo,70,15.75
+2026-02-05,West,Gadget,30,24.00
