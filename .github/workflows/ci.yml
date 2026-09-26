@@ -15,8 +15,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install ruff -r requirements.txt
+      - run: pip install ruff==0.16.9 -r requirements.txt
       - run: ruff check .
       - name: Import-check every workflow (no API calls)
         run: |
           for f in 0*.py; do python -c "import importlib.util as u; s=u.spec_from_file_location('m', '$f'); m=u.module_from_spec(s); s.loader.exec_module(m)"; done
+      - name: Check SDK APIs the code depends on
+        run: python .github/scripts/check_sdks.py

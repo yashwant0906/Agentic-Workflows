@@ -76,6 +76,11 @@ def _safe_eval(node: ast.AST) -> float:
     raise ValueError("only numbers and + - * / ** are allowed")
 
 
+# Failures a tool can hit on bad model input; reported back instead of crashing.
+TOOL_ERRORS = (ValueError, KeyError, TypeError, OSError, SyntaxError,
+               ArithmeticError, RecursionError, csv.Error)
+
+
 def run_tool(name: str, args: dict) -> str:
     if name == "list_files":
         return json.dumps(sorted(p.name for p in SANDBOX.glob("*.csv")))
@@ -114,7 +119,7 @@ def agent(task: str, max_steps: int = 15) -> str:
                 if call.error:
                     raise ValueError(call.error)
                 results.append((call.id, run_tool(call.name, call.input), False))
-            except Exception as exc:  # report tool errors back so the model can recover
+            except TOOL_ERRORS as exc:  # report tool errors back so the model can recover
                 results.append((call.id, f"Error: {exc}", True))
         conv.add_tool_results(results)
 

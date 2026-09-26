@@ -13,6 +13,7 @@ Usage:
 
 import sys
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 from common import banner, call, call_json
 
@@ -69,5 +70,5 @@ def review(code: str, voters: int = 3) -> str:
 
 
 if __name__ == "__main__":
-    source = open(sys.argv[1]).read() if len(sys.argv) > 1 else SAMPLE
+    source = Path(sys.argv[1]).read_text() if len(sys.argv) > 1 else SAMPLE
     print(review(source))

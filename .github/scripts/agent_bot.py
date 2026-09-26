@@ -11,6 +11,7 @@ configured, so the workflows stay green until a key is added.
 
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import sys
@@ -18,7 +19,7 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # repo root, for common.py
-from common import call, call_json, is_configured  # noqa: E402
+common = importlib.import_module("common")
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "")
 API = "https://api.github.com"
@@ -56,7 +57,7 @@ def triage(event: dict) -> None:
         "required": ["label", "summary", "missing_info"],
         "additionalProperties": False,
     }
-    result = call_json(
+    result = common.call_json(
         f"<title>{issue['title']}</title>\n<body>\n{issue.get('body') or '(empty)'}\n</body>\n\n"
         "Pick one label, summarise the issue in one sentence, and list any "
         "information a maintainer would need that is missing (empty if none).",
@@ -77,7 +78,7 @@ def review(event: dict) -> None:
     pr = event["pull_request"]
     diff = gh("GET", f"/repos/{REPO}/pulls/{pr['number']}", accept="application/vnd.github.diff")
     truncated = len(diff) > MAX_DIFF_CHARS
-    body = call(
+    body = common.call(
         f"<title>{pr['title']}</title>\n<description>\n{pr.get('body') or ''}\n</description>\n"
         f"<diff>\n{diff[:MAX_DIFF_CHARS]}\n</diff>\n\n"
         + ("NOTE: the diff was truncated; say so in the review.\n" if truncated else "")
@@ -98,7 +99,7 @@ def review(event: dict) -> None:
 
 
 if __name__ == "__main__":
-    if not is_configured():
+    if not common.is_configured():
         print("No LLM key configured (ANTHROPIC_API_KEY / OPENAI_API_KEY / LLM_BASE_URL) - skipping.")
         sys.exit(0)
     with open(os.environ["GITHUB_EVENT_PATH"]) as f:

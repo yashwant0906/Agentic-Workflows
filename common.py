@@ -191,17 +191,18 @@ class Conversation:
             raise RefusalError(f"Request declined: {msg.refusal}")
 
         calls = []
-        for tc in msg.tool_calls or []:
+        function_calls = [tc for tc in msg.tool_calls or [] if tc.type == "function"]
+        for tc in function_calls:
             try:
                 calls.append(ToolCall(tc.id, tc.function.name, json.loads(tc.function.arguments or "{}")))
             except json.JSONDecodeError:
                 calls.append(ToolCall(tc.id, tc.function.name, {}, "arguments were not valid JSON"))
         assistant: dict[str, Any] = {"role": "assistant", "content": msg.content or ""}
-        if msg.tool_calls:
+        if function_calls:
             assistant["tool_calls"] = [{
                 "id": tc.id, "type": "function",
                 "function": {"name": tc.function.name, "arguments": tc.function.arguments},
-            } for tc in msg.tool_calls]
+            } for tc in function_calls]
         self.messages.append(assistant)
         return Reply(text=(msg.content or "").strip(), tool_calls=calls)
 
@@ -241,7 +242,7 @@ def call_json(prompt: str, schema: dict, *, system: str | None = None,
 
 
 def _extract_json(text: str) -> Any:
-    fenced = re.search(r"```(?:json)?\s*(.*?)```", text, re.S)
+    fenced = re.search(r"```(?:json)?\s*(.*?)```", text, re.DOTALL)
     candidate = fenced.group(1) if fenced else text
     start = min((i for i in (candidate.find("{"), candidate.find("[")) if i != -1), default=-1)
     if start == -1:
