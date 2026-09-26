@@ -124,6 +124,6 @@ skip and stay green.
 
 ## Author
 
-Built by [Yashwant](https://github.com/yashwant0906), who also created
+Built by [Yash Kumar](https://github.com/yashwant0906), who also created
 [Erawan 1](https://huggingface.co/Airavat-ai/erawan-1), a 1.7B model you can
 run these workflows against locally (see *Running a local model* above).
