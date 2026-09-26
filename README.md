@@ -121,3 +121,9 @@ Actions*: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `LLM_BASE_URL` (a
 self-hosted server reachable from GitHub). Optionally, add `LLM_PROVIDER` and
 `LLM_MODEL` as repository **variables**. With nothing configured, the agents
 skip and stay green.
+
+## Author
+
+Built by [Yashwant](https://github.com/yashwant0906), who also created
+[Erawan 1](https://huggingface.co/Airavat-ai/erawan-1), a 1.7B model you can
+run these workflows against locally (see *Running a local model* above).
