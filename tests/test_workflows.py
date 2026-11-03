@@ -1,10 +1,10 @@
 import ast
+import importlib
 import json
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import common
-import importlib
 
 agent_module = importlib.import_module("06_autonomous_agent")
 chain_module = importlib.import_module("01_prompt_chaining")
