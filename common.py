@@ -70,15 +70,21 @@ def model() -> str:
     return name
 
 
+def reset_client_cache() -> None:
+    """Clear cached LLM client (useful when environment variables change or in tests)."""
+    _client.cache_clear()
+
+
 @cache
 def _client():
-    if provider() == "anthropic":
+    current_provider = provider()
+    if current_provider == "anthropic":
         import anthropic
 
         return anthropic.Anthropic()
     from openai import OpenAI
 
-    if provider() == "openai":
+    if current_provider == "openai":
         return OpenAI(base_url=os.environ.get("LLM_BASE_URL") or None)
     base_url = os.environ.get("LLM_BASE_URL")
     if not base_url:
@@ -253,17 +259,30 @@ def _extract_json(text: str) -> Any:
         raise ValueError(str(exc)) from exc
 
 
-_TYPES = {"object": dict, "array": list, "string": str, "boolean": bool,
-          "integer": int, "number": (int, float)}
+_TYPES = {
+    "object": dict,
+    "array": list,
+    "string": str,
+    "boolean": bool,
+    "integer": int,
+    "number": (int, float),
+    "null": type(None),
+}
 
 
 def _validate(value: Any, schema: dict, path: str = "$") -> None:
     """Minimal JSON Schema check: type, enum, required, properties, items."""
     expected = schema.get("type")
-    if expected and not isinstance(value, _TYPES[expected]) or (
-        expected in ("integer", "number") and isinstance(value, bool)
-    ):
-        raise ValueError(f"{path} should be {expected}")
+    if expected:
+        if isinstance(expected, list):
+            types_tuple = tuple(t for exp in expected if exp in _TYPES for t in ((_TYPES[exp],) if not isinstance(_TYPES[exp], tuple) else _TYPES[exp]))
+            if not isinstance(value, types_tuple) or (any(t in ("integer", "number") for t in expected) and isinstance(value, bool) and "boolean" not in expected):
+                raise ValueError(f"{path} should be one of {expected}")
+        elif expected in _TYPES:
+            if not isinstance(value, _TYPES[expected]) or (
+                expected in ("integer", "number") and isinstance(value, bool)
+            ):
+                raise ValueError(f"{path} should be {expected}")
     if "enum" in schema and value not in schema["enum"]:
         raise ValueError(f"{path} must be one of {schema['enum']}")
     if isinstance(value, dict):

@@ -57,6 +57,7 @@ TOOLS = [
 _OPS = {
     ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
     ast.Div: operator.truediv, ast.Pow: operator.pow, ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
 }
 
 
@@ -64,8 +65,8 @@ def _safe_eval(node: ast.AST) -> float:
     """Arithmetic only - no names, calls or attribute access (unlike eval())."""
     if isinstance(node, ast.Expression):
         return _safe_eval(node.body)
-    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
-        return node.value
+    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
+        return float(node.value)
     if isinstance(node, ast.BinOp) and type(node.op) in _OPS:
         left, right = _safe_eval(node.left), _safe_eval(node.right)
         if isinstance(node.op, ast.Pow) and abs(right) > 100:
@@ -85,14 +86,23 @@ def run_tool(name: str, args: dict) -> str:
     if name == "list_files":
         return json.dumps(sorted(p.name for p in SANDBOX.glob("*.csv")))
     if name == "read_csv":
-        path = (SANDBOX / args["filename"]).resolve()
+        filename = args.get("filename")
+        if not filename or not isinstance(filename, str):
+            raise ValueError("filename must be a non-empty string")
+        path = (SANDBOX / filename).resolve()
         if path.parent != SANDBOX.resolve() or not path.is_file():
-            raise ValueError(f"no such file in workspace: {args['filename']}")
-        with path.open(newline="") as f:
+            raise ValueError(f"no such file in workspace: {filename}")
+        limit = args.get("limit", 200)
+        if not isinstance(limit, int) or limit < 0:
+            raise ValueError("limit must be a non-negative integer")
+        with path.open(newline="", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
-        return json.dumps(rows[: args.get("limit", 200)])
+        return json.dumps(rows[:limit])
     if name == "calculate":
-        return str(_safe_eval(ast.parse(args["expression"], mode="eval")))
+        expr = args.get("expression")
+        if not expr or not isinstance(expr, str) or not expr.strip():
+            raise ValueError("expression must be a non-empty string")
+        return str(_safe_eval(ast.parse(expr.strip(), mode="eval")))
     raise ValueError(f"unknown tool: {name}")
 
 
